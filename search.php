@@ -24,12 +24,15 @@ echo "<br/>";
 echo "<br/>";
 
 $nvd_id_list_all = "";
+$jvn_id_list_all = "";
 $search = isset($_POST['search_str'])?$_POST['search_str']:null;
 if( ! is_null($search)){
     foreach ( $pdo->query ( 'select * from cpes where product = "'.$search.'";' ) as $row ) {
         $nvd_id_list_all[] = $row['nvd_id'];
+        $jvn_id_list_all[] = $row['jvn_id'];
     }
     $nvd_id_list = array_unique($nvd_id_list_all);
+    $jvn_id_list = array_unique($jvn_id_list_all);
     echo "<h4>選択プロダクト名：".$search."</h4>";
 
     echo "<tr>";
@@ -40,6 +43,16 @@ if( ! is_null($search)){
     echo "</tr>";
     foreach($nvd_id_list as $nvd_id){
         foreach ( $pdo->query ( 'select * from nvds where id = "'.$nvd_id.'";' ) as $row ) {
+            echo "<tr>";
+            echo "<td>".$row['cve_id']."</td>";
+            echo "<td>".$row['published_date']."</td>";
+            echo "<td>".$row['summary']."</td>";
+            echo "<td>".$row['score']."</td>";
+            echo "</tr>";
+        }
+    }
+    foreach($jvn_id_list as $jvn_id){
+        foreach ( $pdo->query ( 'select * from jvns where id = "'.$jvn_id.'";' ) as $row ) {
             echo "<tr>";
             echo "<td>".$row['cve_id']."</td>";
             echo "<td>".$row['published_date']."</td>";
