@@ -34,6 +34,7 @@ if( ! is_null($search)){
 
     echo "<tr>";
     echo "<th width='150'>CVE</th>";
+    echo "<th width='150'>公開日</th>";
     echo "<th>summary</th>";
     echo "<th width='70'>スコア</th>";
     echo "</tr>";
@@ -41,6 +42,7 @@ if( ! is_null($search)){
         foreach ( $pdo->query ( 'select * from nvds where id = "'.$nvd_id.'";' ) as $row ) {
             echo "<tr>";
             echo "<td>".$row['cve_id']."</td>";
+            echo "<td>".$row['published_date']."</td>";
             echo "<td>".$row['summary']."</td>";
             echo "<td>".$row['score']."</td>";
             echo "</tr>";
