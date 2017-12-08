@@ -4,10 +4,19 @@ session_start();
 include 'include/header.php';
 include 'include/db_connect.php';
 $check = 0;
+$praimary_search = 1;
+$query_kb_year = "";
+$query_kb = "";
+$query_severity = "";
+$query_kb_list = "";
+$severity_list = "";
+$kb_diff_list = "";
+$m = 0;
 $kb_list_all = array();
 $search_tmp = isset($_POST['search_company'])?$_POST['search_company']:null;
 if( ! is_null($search_tmp)){
     $_SESSION['search'] = $search_tmp;
+    $praimary_search = 0;
 }
 $kb_year = isset($_POST['kb_year'])?$_POST['kb_year']:null;
 if (isset($_POST['item']) && is_array($_POST['item'])) {
@@ -40,8 +49,8 @@ echo "<br />";
 echo "<br />";
 echo "<lavel>重大度</lavel>";
 echo '<div class="checkbox">'."\n";
-echo '<label><input type="checkbox" value="Critical" name="item[]" id="Critical">Critical</input></label>'."\n";
 echo '<label><input type="checkbox" value="Important" name="item[]" id="Important">Important</input></label>'."\n";
+echo '<label><input type="checkbox" value="Critical" name="item[]" id="Critical">Critical</input></label>'."\n";
 echo '<label><input type="checkbox" value="Moderate" name="item[]" id="Moderate">Moderate</input></label>'."\n";
 echo '<label><input type="checkbox" value="Low" name="item[]" id="Low">Low</input></label>'."\n";
 echo '</div>'."\n";
@@ -68,6 +77,31 @@ if( ! is_null($search)){
      }
      echo "<h4>取得日：".$get_date."</h4>";
      echo "<br/>";
+     echo "<h4>選択項目</h4>";
+     if($kb_year != ""){
+        echo "<h5>KB情報公開年月：".$kb_year."</h5>";
+     }else{
+        echo "<h5>KB情報公開年月：選択なし</h5>";
+     }
+     if($severity != ""){
+        $severity_search = "";
+        foreach($severity as $value){
+            $severity_search .= " ".$value;
+        }
+        echo "<h5>重大度：".$severity_search."</h5>";
+     }else{
+        echo "<h5>重大度：選択なし</h5>";
+     }
+    if($search_kb != ""){
+        $kb_search = "";
+       $n = explode(";",$search_kb);
+       foreach($n as $value){
+           $kb_search .= " ".$value;
+       }
+       echo "<h5>KB：".$kb_search."</h5>";
+    }else{
+        echo "<h5>KB：選択なし</h5>";
+    }
      echo "<br/>";
      echo '<table class="table">';
      echo '  <tr>';
@@ -129,150 +163,133 @@ if( ! is_null($search)){
                 }else{
                     $os_query_flg = 2;
                 }
-                if( $kb_year != ""){
-                    $check = 1;
+                if($praimary_search != 0){
+                    if( $kb_year != ""){
+                        $query_kb_year = " and kb_list.update_id = '{$kb_year}' ";
+                    }
+                    if( $severity != ""){
+                        foreach($severity as $value){
+                            if($m == 0){
+                                $severity_list = "'".$value."'";
+                                $m = 1;                             
+                            }else{
+                                $severity_list .= ",'".$value."'";
+                            }
+                        }
+                        $query_severity = " and severity in ({$severity_list}) "; 
+                    }
+                    if($search_kb != ""){
+                        $m = 0;
+                        $n = explode(";",$search_kb);
+                        foreach($n as $value){
+                            if($m == 0){
+                                $query_kb_list = "'".$value."'";
+                                $m = 1;
+                            }else{
+                                $query_kb_list .= ",'".$value."'";
+                            }
+                            $query_kb = " and kb_number in ({$query_kb_list}) ";
+                        }
+                    }
                     switch($os_query_flg){
                         case 0:
-                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name not like '%R2%' and kb_list.update_id = '{$kb_year}'");
+                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name not like '%R2%'".$query_kb_year.$query_severity.$query_kb);
                         break;
                         case 1:
-                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and kb_list.update_id = '{$kb_year}'");
+                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%'".$query_kb_year.$query_severity.$query_kb);
                         break;
                         case 2:
-                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name like '%{$bit}%' and kb_list.update_id = '{$kb_year}'");
-                        break;
-                    }
-                    while($row = mysqli_fetch_row($query)){
-                        $kb_list_all[] = $row[0];    
-                    }
-                }
-                if( $severity != ""){
-                   $check = 1;
+                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name like '%{$bit}%'".$query_kb_year.$query_severity.$query_kb);
+                        break;                        
+                    }                    
+                }else{
                     switch($os_query_flg){
                         case 0:
-                        foreach($severity as $value){
-                            $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name not like '%R2%' and severity = '{$value}'");
-                            while($row = mysqli_fetch_row($query)){
-                                $kb_list_all[] = $row[0];    
-                            }
-                        }
+                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name not like '%R2%'");
                         break;
                         case 1:
-                        foreach($severity as $value){
-                            $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and severity = '{$value}'");
-                            while($row = mysqli_fetch_row($query)){
-                                $kb_list_all[] = $row[0];    
-                            }
-                        }
+                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%'");
                         break;
                         case 2:
-                        foreach($severity as $value){
-                            $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name like '%{$bit}%' and severity = '{$value}'");
-                            while($row = mysqli_fetch_row($query)){
-                                $kb_list_all[] = $row[0];    
-                            }
-                        }
+                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name like '%{$bit}%'");
                         break;
                     }
-                }
-                if($search_kb != ""){
-                   $check = 1;
-                  $n = explode(";",$search_kb);
-                  foreach($n as $value){
-                    switch($os_query_flg){
-                        case 0:
-                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name not like '%R2%' and kb_number = '{$value}'");
-                        while($row = mysqli_fetch_row($query)){
-                            if(count($row[0]) != 0){
-                                $kb_list_all[] = $value;
-                            }
-                        }
-                        break;
-                        case 1:
-                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and kb_number = '{$value}'");
-                        while($row = mysqli_fetch_row($query)){
-                            if(count($row[0]) != 0){
-                                $kb_list_all[] = $value;
-                            }
-                        }
-                        break;
-                        case 2:
-                        $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name like '%{$bit}%' and kb_number = '{$value}'");
-                        while($row = mysqli_fetch_row($query)){
-                            if(count($row[0]) != 0){
-                                $kb_list_all[] = $value;
-                            }
-                        }
-                        break;
-                    }
-                  }
-                }
-                if($check == 0){
-                switch($os_query_flg){
-                    case 0:
-                    $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name not like '%R2%'");
-                    break;
-                    case 1:
-                    $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%'");
-                    break;
-                    case 2:
-                    $query = mysqli_query($link,"select DISTINCT kb_number from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name like '%{$bit}%'");
-                    break;
                 }
                 while($row = mysqli_fetch_row($query)){
                     $kb_list_all[] = $row[0];    
                 }
-            }
                 $kb_list_uniq = array_unique($kb_list_all);
                 $kb_diff_all = array_diff($kb_list_uniq,$inst_kb_list);
                 $kb_diff = array_unique($kb_diff_all);
                 echo "<td>".count($kb_diff)."</td>";
-                // foreach($kb_diff as $kb){
-                //      if($kb_query_flg == 0){
-                //          $query = mysqli_query($link,"SELECT cve_number FROM kb_list INNER JOIN production_list ON kb_list.producrion_id = production_list.production_id where production_name like '%{$os_name}%' and production_name not like '%R2%' and kb_number = '{$kb}'");
-                //      }
-                //      if($kb_query_flg == 1){
-                //          $query = mysqli_query($link,"SELECT cve_number FROM kb_list INNER JOIN production_list ON kb_list.producrion_id = production_list.production_id where production_name like '%{$os_name}%' and kb_number = '{$kb}'");
-                //      }
-                //      if($kb_query_flg == 2){
-                //          $query = mysqli_query($link,"SELECT cve_number FROM kb_list INNER JOIN production_list ON kb_list.producrion_id = production_list.production_id where production_name like '%{$os_name}%' and production_name like '%{$bit}%' and kb_number = '{$kb}'");
-                //      }
-                //      while ($row = mysqli_fetch_row($query)) {
-                //          $cve_list_all[] = $row[0];
-                //      }
-                // }
-                // $cve_list = array_unique($cve_list_all);
-                // foreach($cve_list as $cve){
-                //     $query = mysqli_query($link,"select severity from cve_list where cve_number = '{$cve}'");
-                //     while ($row = mysqli_fetch_row($query)) {
-                //         if($row[0] == "Important"){
-                //             $cve_important[] = $cve;
-                //         }
-                //         if($row[0] == "Critical"){
-                //             $cve_critical[] = $cve;
-                //         }
-                //         if($row[0] == "Moderate"){
-                //             $cve_moderate[] = $cve;
-                //         }
-                //         if($row[0] == "Low"){
-                //             $cve_low[] = $cve;
-                //         }
-                //     }
-                // }
-                // echo "<td>".count($cve_important)."</td>";
-                // echo "<td>".count($cve_critical)."</td>";
-                // echo "<td>".count($cve_moderate)."</td>";
-                // echo "<td>".count($cve_low)."</td>";
-                echo "<td></td>";
-                echo "<td></td>";
-                echo "<td></td>";
-                echo "<td></td>";
-                echo "<td>";
-                echo '<form action="./pc_info_important.php" method="post">';
-                echo '<button class="btn" input type="hidden" value="'.$search.":".$pc_name.'" name="pc_info" id="pc_info" type="submit">詳細</button>';
-                echo '</form>';
-                echo "</td>";
-                echo "</tr>";
+                if(count($kb_diff) != 0){
+                    $m = 0;
+                    foreach($kb_diff as $kb){
+                        if($m == 0){
+                            $kb_diff_list = "'".$kb."'";
+                            $m = 1;
+                        }else{
+                            $kb_diff_list .= ",'".$kb."'";
+                        }
+                    }
+                    switch($os_query_flg){
+                        case 0:
+                        $query = mysqli_query($link,"SELECT cve_number FROM kb_list INNER JOIN production_list ON kb_list.producrion_id = production_list.production_id where production_name like '%{$os_name}%' and production_name not like '%R2%' and kb_number in ({$kb_diff_list})");
+                        break;
+                        case 1:
+                        $query = mysqli_query($link,"SELECT cve_number FROM kb_list INNER JOIN production_list ON kb_list.producrion_id = production_list.production_id where production_name like '%{$os_name}%' and kb_number in ({$kb_diff_list})");
+                        break;
+                        case 2:
+                        $query = mysqli_query($link,"SELECT cve_number FROM kb_list INNER JOIN production_list ON kb_list.producrion_id = production_list.production_id where production_name like '%{$os_name}%' and production_name like '%{$bit}%' and kb_number in ({$kb_diff_list})");
+                        break;
+                    }
+                    $cve_list_all = array();
+                    while ($row = mysqli_fetch_row($query)) {
+                        $cve_list_all[] = $row[0];
+                    }
+                    $cve_list = array_unique($cve_list_all);
+                    $cve_important = 0;
+                    $cve_critical = 0;
+                    $cve_moderate = 0;
+                    $cve_low = 0;
+                    foreach($cve_list as $cve){
+                        $query = mysqli_query($link,"select severity from cve_list where cve_number = '{$cve}'");
+                        while ($row = mysqli_fetch_row($query)) {
+                            if($row[0] == "Important"){
+                                $cve_important = $cve_important + 1;
+                            }
+                            if($row[0] == "Critical"){
+                                $cve_critical = $cve_critical + 1;
+                            }
+                            if($row[0] == "Moderate"){
+                                $cve_moderate = $cve_moderate + 1;
+                            }
+                            if($row[0] == "Low"){
+                                $cve_low = $cve_low + 1;
+                            }
+                        }
+                    }
+                    echo "<td>".$cve_important."</td>";
+                    echo "<td>".$cve_critical."</td>";
+                    echo "<td>".$cve_moderate."</td>";
+                    echo "<td>".$cve_low."</td>";
+                    // echo "<td></td>";
+                    // echo "<td></td>";
+                    // echo "<td></td>";
+                    // echo "<td></td>";
+                    echo "<td>";
+                    echo '<form action="./pc_info_important.php" method="post">';
+                    echo '<button class="btn" input type="hidden" value="'.$search.":".$pc_name.'" name="pc_info" id="pc_info" type="submit">詳細</button>';
+                    echo '</form>';
+                    echo "</td>";
+                    echo "</tr>";
+                }else{
+                    echo "<td></td>";
+                    echo "<td></td>";
+                    echo "<td></td>";
+                    echo "<td></td>";
+                    echo "<td></td>";
+                }
             }
         }
         $i = $i + 1;
