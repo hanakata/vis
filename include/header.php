@@ -20,7 +20,6 @@ echo '            <a href="../top.php" class="navbar-brand">viser</a>';
 echo '        </div>';
 echo '        <ul class="nav navbar-nav">';
 echo '            <li><a href="../company_choice.php">登録</a></li>';
-echo '            <li><a href="../search.php">リスト</a></li>';
 echo '        </ul>';
 echo '    </nav>';
 echo '</div>';

@@ -21,6 +21,8 @@ if($result_count != 0){
     echo "登録処理を実行しました。";
 }
 
+mysqli_query($link,"delete from kb_info where company_id ='{$company_code}'");
+
  $file_name = $_FILES['csvfile']['name'];
  $file_tmp = $_FILES['csvfile']['tmp_name'];
 
