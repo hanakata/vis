@@ -11,26 +11,35 @@ $query_severity = "";
 $query_kb_list = "";
 $severity_list = "";
 $kb_diff_list = "";
+$_SESSION['search_company'] = "";
+$_SESSION['kb_year'] = "";
+$_SESSION['severity'] = "";
+$_SESSION['search_kb'] = "";
+
 $m = 0;
 $kb_list_all = array();
 $search_tmp = isset($_POST['search_company'])?$_POST['search_company']:null;
 if( ! is_null($search_tmp)){
-    $_SESSION['search'] = $search_tmp;
+    $_SESSION['search_company'] = $search_tmp;
     $praimary_search = 0;
 }
 $kb_year = isset($_POST['kb_year'])?$_POST['kb_year']:null;
+$_SESSION['kb_year'] = $kb_year;
+
 if (isset($_POST['item']) && is_array($_POST['item'])) {
     $severity = $_POST['item'];
+    $_SESSION['severity'] = $severity;
 }else{
     $severity = "";
 }
 $search_kb = isset($_POST['search_kb'])?$_POST['search_kb']:null;
-
+$_SESSION['search_kb'] = $search_kb;
 
 $query = mysqli_query($link,"SELECT DISTINCT update_id FROM kb_list");
 while ($row = mysqli_fetch_row($query)) {
     $kb_update_id_all[] = $row[0];
 }
+
 sort($kb_update_id_all);
 echo '<section>'."\n";
 echo '<button type="button" style="width:300px" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#search">検索パネル</button>'."\n";
@@ -65,7 +74,7 @@ echo '</section>'."\n";
 
 echo "<br/>";
 
-$search = $_SESSION['search'];
+$search = $_SESSION['search_company'];
 if( ! is_null($search)){
     $i = 0;
      echo "<h4>選択会社名：".$search."</h4>";
@@ -273,13 +282,13 @@ if( ! is_null($search)){
                     echo "<td>".$cve_critical."</td>";
                     echo "<td>".$cve_moderate."</td>";
                     echo "<td>".$cve_low."</td>";
-                    // echo "<td></td>";
-                    // echo "<td></td>";
-                    // echo "<td></td>";
-                    // echo "<td></td>";
                     echo "<td>";
-                    echo '<form action="./pc_info_important.php" method="post">';
-                    echo '<button class="btn" input type="hidden" value="'.$search.":".$pc_name.'" name="pc_info" id="pc_info" type="submit">詳細</button>';
+                    echo '<form action="./pc_kb_info.php" method="post">';
+                    echo '<input type="hidden" name="os_name" value="'.$os_name.'">';
+                    echo '<input type="hidden" name="bit" value="'.$bit.'">';
+                    echo '<input type="hidden" name="os_query_flg" value="'.$os_query_flg.'">';
+                    echo '<input type="hidden" name="kb_diff_list" value="'.$kb_diff_list.'">';
+                    echo '<button class="btn" input type="hidden" value="'.$pc_name.'" name="pc_info" id="pc_info" type="submit">詳細</button>';
                     echo '</form>';
                     echo "</td>";
                     echo "</tr>";
