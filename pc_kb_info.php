@@ -1,22 +1,12 @@
 <div class="container" style="padding:70px 0 0 0">
 
-<ul class="nav nav-tabs nav-justified">
-	<li role="presentation"><a href="pc_info_important.php">Important</a></li>
-	<li role="presentation"><a href="pc_info_critical.php">Critical</a></li>
-	<li role="presentation" class="active"><a href="pc_info_moderate.php">Moderate</a></li>
-	<li role="presentation"><a href="pc_info_low.php">Low</a></li>
-</ul>
-<br/>
-<br/>
-
 <?php
+try{
 session_start();
 $_SESSION['back'] = 1;
 
 $search_company = $_SESSION['search_company'];
-$kb_year = $_SESSION['kb_year'];
-$severity = $_SESSION['severity'];
-$search_kb = $_SESSION['search_kb'];
+
 $_SESSION['pc_name'] = $_POST['pc_info'];
 $kb_diff_list = $_POST['kb_diff_list'];
 $os_name = $_POST['os_name'];
@@ -28,16 +18,45 @@ echo "<br/>";
 echo "<br/>";
 echo '<table class="table table-striped">';
 echo '  <tr>';
-echo '    <th>KB公開年月</th>';
 echo '    <th>未適用KB</th>';
 echo '    <th>対象製品</th>';
 echo '  </tr>';
 include 'include/header.php';
 include 'include/db_connect.php';
 
-//$query = mysqli_query($link,"SELECT * FROM kb_info INNER JOIN company_list ON kb_info.company_id = company_list.company_id where company_name = '{$_SESSION['company_name']}' and pc_name = '{$_SESSION['pc_name']}'");
-//while ($row = mysqli_fetch_row($query)) {
-//}
+switch($os_query_flg){
+	case 0:
+	$query_str_tmp = "select kb_list.update_id,kb_list.cve_number,severity,production_name from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name not like '%R2%'";
+	break;
+	case 1:
+	$query_str_tmp = "select kb_list.update_id,kb_list.cve_number,severity,production_name from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%'";
+	break;
+	case 2:
+	$query_str_tmp = "select kb_list.update_id,kb_list.cve_number,severity,production_name from kb_list join cve_list on (kb_list.cve_number = cve_list.cve_number) left join production_list on (kb_list.producrion_id = production_list.production_id) where production_name like '%{$os_name}%' and production_name like '%{$bit}%'";
+	break;
+}
+$kb_list = explode(",",$kb_diff_list);
+sort($kb_list);
+foreach($kb_list as $kb_tmp){
+	$kb = str_replace("'","",$kb_tmp);
+ 	$query_str = $query_str_tmp." and kb_number = '{$kb}'";
+	 $query = mysqli_query($link,$query_str);
+ 	while ($row = mysqli_fetch_row($query)) {
+ 		$production_all[] = $row[3];
+ 	}
+ 	echo "<tr>";
+ 	echo "<td>".$kb."</td>";
+	echo "<td>";
+	$productions = array_unique($production_all);
+	foreach($productions as $production){
+		echo $production."<br />";
+	}
+	echo "</td>";
+ 	echo "</tr>";
+}
+}catch(Exception $e){
+	echo "エラー";
+}
 ?>
 </table>
 <div>

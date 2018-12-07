@@ -11,36 +11,31 @@ $query_severity = "";
 $query_kb_list = "";
 $severity_list = "";
 $kb_diff_list = "";
-$_SESSION['search_company'] = "";
 $_SESSION['kb_year'] = "";
 $_SESSION['severity'] = "";
 $_SESSION['search_kb'] = "";
 
 $m = 0;
-$kb_list_all = array();
 $search_tmp = isset($_POST['search_company'])?$_POST['search_company']:null;
 if( ! is_null($search_tmp)){
     $_SESSION['search_company'] = $search_tmp;
     $praimary_search = 0;
 }
 $kb_year = isset($_POST['kb_year'])?$_POST['kb_year']:null;
-$_SESSION['kb_year'] = $kb_year;
 
 if (isset($_POST['item']) && is_array($_POST['item'])) {
     $severity = $_POST['item'];
-    $_SESSION['severity'] = $severity;
 }else{
     $severity = "";
 }
 $search_kb = isset($_POST['search_kb'])?$_POST['search_kb']:null;
-$_SESSION['search_kb'] = $search_kb;
 
 $query = mysqli_query($link,"SELECT DISTINCT update_id FROM kb_list");
 while ($row = mysqli_fetch_row($query)) {
     $kb_update_id_all[] = $row[0];
 }
 
-sort($kb_update_id_all);
+rsort($kb_update_id_all);
 echo '<section>'."\n";
 echo '<button type="button" style="width:300px" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#search">検索パネル</button>'."\n";
 echo '<div id="search" class="collapse">'."\n";
@@ -64,7 +59,7 @@ echo '<label><input type="checkbox" value="Moderate" name="item[]" id="Moderate"
 echo '<label><input type="checkbox" value="Low" name="item[]" id="Low">Low</input></label>'."\n";
 echo '</div>'."\n";
 echo '<lavel>検索対象KB</lavel><br/>'."\n";
-echo '<input type="text" name="search_kb"　size=200 >'."\n";
+echo '<input type="text" name="search_kb" size=100 >'."\n";
 echo '<button class="btn pull-right" type="submit">検索</button>';
 echo '</form>'."\n";
 echo '</div>'."\n";
@@ -75,6 +70,36 @@ echo '</section>'."\n";
 echo "<br/>";
 
 $search = $_SESSION['search_company'];
+echo '<form action="./csv_output.php" method="post">';
+if($praimary_search != 0){
+    if( $kb_year != ""){
+        echo '<input type="hidden" name="kb_year" value="'.$kb_year.'">';
+    }else{
+        echo '<input type="hidden" name="kb_year" value="">';
+    }
+    if( $severity != ""){
+        $m = 0;
+        foreach($severity as $value){
+            if($m == 0){
+                $severity_list = "'".$value."'";
+                $m = 1;                             
+            }else{
+                $severity_list .= ",'".$value."'";
+            }
+        }
+        echo '<input type="hidden" name="severity" value="'.$severity_list.'">';
+    }else{
+        echo '<input type="hidden" name="severity" value="">';
+    }
+    if($search_kb != ""){
+        echo '<input type="hidden" name="search_kb" value="'.$search_kb.'">';
+    }else{
+        echo '<input type="hidden" name="search_kb" value="">';
+    }
+}
+echo '<input type="hidden" name="search" value="'.$search.'">';
+echo '<button class="btn btn-success pull-right" input type="hidden" value="" name="pc_info" id="pc_info" type="submit">CSV出力</button>';
+echo '</form>';
 if( ! is_null($search)){
     $i = 0;
      echo "<h4>選択会社名：".$search."</h4>";
@@ -156,6 +181,7 @@ if( ! is_null($search)){
                 echo "<td></td>"; 
             }
             if($row[5] == 0 ){
+                $kb_list_all = array();
                 echo "<tr>";
                 echo "<td>".$pc_name."</td>";
                 echo "<td>".$logon_user_all[$i]."</td>";
@@ -175,8 +201,11 @@ if( ! is_null($search)){
                 if($praimary_search != 0){
                     if( $kb_year != ""){
                         $query_kb_year = " and kb_list.update_id = '{$kb_year}' ";
+                    }else{
+                        $query_kb_year = "";
                     }
                     if( $severity != ""){
+                        $m = 0;
                         foreach($severity as $value){
                             if($m == 0){
                                 $severity_list = "'".$value."'";
@@ -186,6 +215,8 @@ if( ! is_null($search)){
                             }
                         }
                         $query_severity = " and severity in ({$severity_list}) "; 
+                    }else{
+                        $query_severity = "";
                     }
                     if($search_kb != ""){
                         $m = 0;
@@ -197,8 +228,10 @@ if( ! is_null($search)){
                             }else{
                                 $query_kb_list .= ",'".$value."'";
                             }
-                            $query_kb = " and kb_number in ({$query_kb_list}) ";
                         }
+                        $query_kb = " and kb_number in ({$query_kb_list}) ";
+                    }else{
+                        $query_kb = "";
                     }
                     switch($os_query_flg){
                         case 0:

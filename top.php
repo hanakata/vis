@@ -3,7 +3,7 @@
 session_start();
 include 'include/header.php';
 ?>
-リストから各会社ごとの未適用KBと脆弱性情報が確認できます。<br/>
+
 <table class="table table-striped">
     <thead>
       <tr>
@@ -42,4 +42,6 @@ while ($row = mysqli_fetch_row($query)) {
     echo "</td>";
 }
 ?>
+    </tbody>
+</table>
 </div>
